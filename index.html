@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>异地医保与门特办理攻略 - 上海陪诊小河</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <style>
+        /* 隐藏滚动条 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        body { 
+            background-color: #F8FAFC; /* Slate-50 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 弹窗动画 */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-animate { animation: fadeIn 0.2s ease-out forwards; }
+
+        /* 二维码修正样式 */
+        #qrcode canvas { display: none !important; }
+        #qrcode img { display: block !important; margin: 0 auto; max-width: 100%; height: auto; }
+        
+        /* 平滑滚动 */
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // --- 图标组件 ---
+        const Icon = ({ name, className }) => {
+            const icons = {
+                Shield: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+                MapPin: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
+                FileText: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>,
+                Smartphone: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>,
+                Info: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>,
+                ArrowUp: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>,
+                Phone: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+                MessageCircleDots: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>,
+                Link: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+                CreditCard: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>,
+                AlertTriangle: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+            };
+            return icons[name] || null;
+        };
+
+        // --- 辅助组件 ---
+        function Card({ children, className = "" }) {
+            return (
+                <div className={`bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-shadow duration-300 ${className}`}>
+                    {children}
+                </div>
+            );
+        }
+
+        function Step({ id, number, title, desc, note, badge, badgeColor = "blue", isActive, onSelect }) {
+            // 颜色配置映射
+            const colors = {
+                blue: {
+                    line: "bg-blue-100",
+                    circleActive: "bg-blue-600 text-white ring-blue-100", // 这行其实不会用到，因为active时会切到orange
+                    circleInactive: "bg-blue-500 ring-blue-100 group-hover:bg-blue-400",
+                    contentActive: "bg-blue-50/50", // 同样不会用到
+                    titleActive: "text-blue-700",
+                    badge: "bg-blue-50 text-blue-600 border-blue-100",
+                    note: "text-blue-600 bg-blue-50 border-blue-100"
+                },
+                orange: {
+                    line: "bg-orange-100",
+                    circleActive: "bg-orange-600 text-white ring-orange-100",
+                    circleInactive: "bg-orange-500 ring-orange-100 group-hover:bg-orange-400",
+                    contentActive: "bg-orange-50/50",
+                    titleActive: "text-orange-700",
+                    badge: "bg-orange-50 text-orange-600 border-orange-100",
+                    note: "text-orange-600 bg-orange-50 border-orange-100"
+                }
+            };
+            
+            // 核心逻辑修改：
+            // 如果 isActive 为 true，强制使用 "orange" 配色方案
+            // 如果 isActive 为 false，使用传入的 badgeColor (默认为 "blue")
+            const theme = isActive ? "orange" : badgeColor;
+            const c = colors[theme] || colors.blue;
+
+            return (
+                <div 
+                    onClick={() => onSelect(id)}
+                    className={`relative pl-8 pb-8 last:pb-0 group cursor-pointer transition-all duration-200`}
+                >
+                    {/* 竖线 */}
+                    <div className={`absolute left-[11px] top-6 bottom-0 w-0.5 ${c.line} last:hidden transition-colors duration-300`}></div>
+                    
+                    {/* 圆圈数字 */}
+                    <div className={`absolute left-0 top-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white shadow-sm z-10 transition-all duration-300 
+                        ${isActive 
+                            ? `${c.circleActive} ring-4 scale-110` 
+                            : `${c.circleInactive} text-white ring-1 group-hover:scale-110`
+                        }`}
+                    >
+                        {number}
+                    </div>
+                    
+                    {/* 内容 */}
+                    <div className={`transition-all duration-300 p-2 -my-2 -mr-2 rounded-lg ${isActive ? c.contentActive : 'hover:bg-slate-50'}`}>
+                        <div className="flex items-center gap-2">
+                            <h3 className={`font-bold text-sm transition-colors ${isActive ? c.titleActive : 'text-slate-700'}`}>
+                                {title}
+                            </h3>
+                            {badge && <span className={`${c.badge} text-[10px] px-1.5 py-0.5 rounded border font-medium transition-colors duration-300`}>{badge}</span>}
+                        </div>
+                        <p className="text-sm text-slate-600 mt-1 leading-relaxed select-none">{desc}</p>
+                        {note && (
+                            <p className={`text-xs mt-2 font-medium ${c.note} inline-block px-2 py-1 rounded-lg transition-colors duration-300`}>
+                                💡 {note}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function SectionHeader({ title, iconName, color = "blue" }) {
+            const bgClass = color === "orange" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700";
+            return (
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200">
+                    <div className={`p-2 rounded-lg ${bgClass}`}>
+                        <Icon name={iconName} className="w-5 h-5" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+                </div>
+            );
+        }
+
+        // --- 内容区块 ---
+
+        function Phase1({ activeStep, onStepSelect }) {
+            return (
+                <Card>
+                    <div className="space-y-2">
+                        <Step id="p1-1" isActive={activeStep === 'p1-1'} onSelect={onStepSelect}
+                            number="1" title="打开支付宝搜索" desc="直接在支付宝上方搜索栏输入“异地就医备案”。" badge="入口" />
+                        
+                        <Step id="p1-2" isActive={activeStep === 'p1-2'} onSelect={onStepSelect}
+                            number="2" title="选择备案类型" desc="一般选择“异地长期居住”和“异地临时外出”两种选项。" 
+                            note="长期居住报销比例通常更高，但需要提供居住证明或签署承诺书。" badge="关键" />
+                        
+                        {/* 这里不再需要手动传递 badgeColor 条件，Step 组件已统一处理 */}
+                        <Step id="p1-3" isActive={activeStep === 'p1-3'} onSelect={onStepSelect}
+                            number="3" title="温馨提示" desc="一般选择“临时外出”或“长期居住”。尽量不要选“转诊”备案。" 
+                            note="转诊通常需要当地医院开具严格的转诊证明，否则无法审核通过。" badge="提示" />
+                        
+                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-xs text-slate-500 mt-2">
+                            <span className="font-bold text-slate-700">📝 举例：</span> 苏州医保临时外出就医，一般按原规定结付比例的 80% 结算。
+                        </div>
+                    </div>
+                </Card>
+            );
+        }
+
+        function Phase2({ activeStep, onStepSelect }) {
+            return (
+                <div className="space-y-4">
+                    {/* 知识点卡片 */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
+                        <div className="bg-blue-100 p-2 rounded-full text-blue-600 shrink-0">
+                            <Icon name="Shield" className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-blue-800 text-sm">什么是“门特”？</h4>
+                            <p className="text-xs text-blue-700 mt-1 leading-relaxed">
+                                全称“门诊特殊病种”（部分地区有慢病），包括恶性肿瘤放化疗、透析等。办理后，在门诊产生的相关治疗费用可享受类似住院的报销待遇。
+                            </p>
+                        </div>
+                    </div>
+
+                    <Card>
+                        <div className="space-y-2">
+                            <Step id="p2-1" isActive={activeStep === 'p2-1'} onSelect={onStepSelect}
+                                number="1" title="准备申请材料" desc="核心材料包括：《门诊慢特病病种待遇申请表》、疾病诊断书、病理报告、近期门诊病历及检查报告。" 
+                                note="申请表需由具有资质医院的专科副主任及以上医师填写，并经医院医保科盖章。" badge="准备" />
+                            
+                            <Step id="p2-2" isActive={activeStep === 'p2-2'} onSelect={onStepSelect}
+                                number="2" title="选择办理渠道" desc="各地政策不同，通常有三种方式：① 当地医保局小程序/APP线上办理；② 医保局指定医院的一站式服务窗口；③ 医保局经办大厅现场办理。" badge="办理" />
+                            
+                            <Step id="p2-3" isActive={activeStep === 'p2-3'} onSelect={onStepSelect}
+                                number="3" title="等待审核生效" desc="提交后等待审核。审核通过后，在门诊进行相关治疗（如放疗）即可享受特病待遇。" />
+                        </div>
+                    </Card>
+                </div>
+            );
+        }
+
+        function Phase3({ activeStep, onStepSelect }) {
+            return (
+                <div className="space-y-4">
+                    <Card className="bg-gradient-to-br from-white to-slate-50">
+                        <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <Icon name="Link" className="w-5 h-5 text-blue-500" />
+                            医保逻辑关系公式
+                        </h3>
+                        
+                        <div className="space-y-3">
+                            {/* 公式 1 */}
+                            <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                <div className="text-xs text-slate-400 mb-1">基础身份差异</div>
+                                <div className="flex items-center justify-between text-sm font-bold text-slate-700">
+                                    <span>职工医保</span>
+                                    <span className="text-blue-500">&gt;</span>
+                                    <span>居民医保</span>
+                                </div>
+                                <div className="text-[10px] text-slate-500 mt-1">职工报销比例通常高于居民医保。</div>
+                            </div>
+
+                            {/* 公式 2 */}
+                            <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                <div className="text-xs text-slate-400 mb-1">异地报销差异</div>
+                                <div className="flex items-center justify-between text-sm font-bold text-slate-700">
+                                    <span>异地门特</span>
+                                    <span className="text-blue-500">&gt;</span>
+                                    <span>普通异地门诊</span>
+                                </div>
+                                <div className="text-[10px] text-slate-500 mt-1">办了门特，报销比例比普通看门诊要高很多。</div>
+                            </div>
+
+                            {/* 终极组合 */}
+                            <div className="bg-blue-600 p-4 rounded-xl text-white shadow-md mt-4">
+                                <div className="text-xs text-blue-200 mb-2 font-medium">✨ 最佳报销组合公式</div>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-white/20 px-2 py-1 rounded text-xs">职工/居民医保</div>
+                                        <span className="text-xs opacity-70">(基础)</span>
+                                    </div>
+                                    <div className="text-center text-xs opacity-50">+</div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-white/20 px-2 py-1 rounded text-xs">异地备案</div>
+                                        <span className="text-xs opacity-70">(前提: 临时/长期)</span>
+                                    </div>
+                                    <div className="text-center text-xs opacity-50">+</div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-white text-blue-700 px-2 py-1 rounded text-xs font-bold shadow-sm">门特认定</div>
+                                        <span className="text-xs opacity-90 font-bold">(最终目的)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl flex gap-3">
+                        <Icon name="AlertTriangle" className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                        <div className="text-xs text-orange-800 leading-relaxed">
+                            <span className="font-bold">注意：</span> 
+                            异地使用门特，通常需要先进行异地就医备案。部分地区要求必须是“异地长期居住”才能享受门特待遇，也有部分地区支持“临时外出”使用门特。请务必拨打当地医保局电话核实。
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 主 App 组件 ---
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('filing');
+            const [activeStep, setActiveStep] = useState(null);
+            const [showQR, setShowQR] = useState(false);
+            const qrInstanceRef = useRef(null);
+
+            const p1Ref = useRef(null);
+            const p2Ref = useRef(null);
+            const p3Ref = useRef(null);
+
+            const tabs = [
+                { id: 'filing', label: '1.异地备案', icon: 'Smartphone', ref: p1Ref },
+                { id: 'mente', label: '2.门特申请', icon: 'FileText', ref: p2Ref },
+                { id: 'relation', label: '3.报销逻辑', icon: 'Link', ref: p3Ref },
+            ];
+
+            const scrollToSection = (id, ref) => {
+                setActiveTab(id);
+                const offset = 150; 
+                const element = ref.current;
+                if (element) {
+                    const y = element.getBoundingClientRect().top + window.scrollY - offset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+            };
+
+            const handleStepSelect = (stepId) => {
+                setActiveStep(stepId === activeStep ? null : stepId); 
+            };
+
+            // 监听滚动
+            useEffect(() => {
+                const handleScroll = () => {
+                    const scrollY = window.scrollY;
+                    const offset = 200;
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 20) {
+                        setActiveTab(tabs[tabs.length - 1].id);
+                        return;
+                    }
+                    let currentSection = tabs[0].id;
+                    for (const tab of tabs) {
+                        const element = tab.ref.current;
+                        if (element && element.offsetTop - offset <= scrollY) {
+                            currentSection = tab.id;
+                        }
+                    }
+                    setActiveTab(currentSection);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            // 二维码逻辑
+            useEffect(() => {
+                const qrContainer = document.getElementById("qrcode");
+                if (qrContainer && !qrInstanceRef.current) {
+                    qrContainer.innerHTML = ""; 
+                    qrInstanceRef.current = new QRCode(qrContainer, {
+                        text: "https://u.wechat.com/EKcPjhL9GyGJtvlbGIc9Bbs",
+                        width: 200, 
+                        height: 200,
+                        colorDark : "#2563eb", // blue-600
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+
+                    setTimeout(() => {
+                        const canvas = qrContainer.querySelector('canvas');
+                        const img = qrContainer.querySelector('img');
+                        if (canvas && (!img || !img.src || img.style.display === 'none')) {
+                            const dataUrl = canvas.toDataURL("image/png");
+                            let targetImg = img;
+                            if (!targetImg) {
+                                targetImg = document.createElement("img");
+                                qrContainer.appendChild(targetImg);
+                            }
+                            targetImg.src = dataUrl;
+                            targetImg.style.display = "block";
+                            canvas.style.display = "none";
+                        }
+                    }, 100); 
+                }
+            }, []);
+
+            return (
+                <div className="min-h-screen pb-20 selection:bg-blue-100 font-sans text-slate-800">
+                    
+                    {/* 微信弹窗 */}
+                    <div 
+                        id="qrModal" 
+                        className={`fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900 bg-opacity-70 backdrop-blur-sm transition-all duration-300 ${showQR ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                        onClick={() => setShowQR(false)}
+                    >
+                        <div 
+                            className={`bg-white rounded-2xl p-6 max-w-sm w-full relative shadow-2xl transform transition-all duration-300 ${showQR ? 'scale-100' : 'scale-95'}`}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <button onClick={() => setShowQR(false)} className="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-3xl font-light focus:outline-none">&times;</button>
+                            
+                            <div className="text-center mt-2">
+                                <h3 className="text-xl font-bold text-slate-800 mb-1">添加微信咨询</h3>
+                                <p className="text-sm text-slate-500 mb-4">长按识别或扫一扫下方二维码</p>
+                                
+                                <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 mb-4 flex justify-center items-center">
+                                    <div id="qrcode"></div>
+                                </div>
+                                
+                                <div className="font-bold text-blue-700 text-lg">上海陪诊小河</div>
+                                <div className="text-slate-500 text-sm flex items-center justify-center gap-1 mt-1">
+                                    <Icon name="Phone" className="w-3 h-3" />
+                                    <span>17898872018</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Header */}
+                    <header className="bg-white shadow-sm sticky top-0 z-50">
+                        <div className="px-5 py-4 flex justify-between items-center bg-white">
+                            <div className="flex flex-col">
+                                <h1 className="text-slate-800 font-bold text-base leading-none tracking-tight">上海陪诊小河</h1>
+                                <div className="flex items-center gap-1 text-slate-400 text-xs mt-1.5 font-medium tracking-wide">
+                                    <Icon name="CreditCard" className="w-3 h-3" />
+                                    <span>医保/门特办理指引</span>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowQR(true)}
+                                className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-full transition-all text-xs md:text-sm font-bold shrink-0 cursor-pointer shadow-sm"
+                            >
+                                <Icon name="MessageCircleDots" className="w-4 h-4" />
+                                <span>询问小河攻略</span>
+                            </button>
+                        </div>
+                    
+                        {/* 导航栏 */}
+                        <div className="bg-white flex overflow-x-auto border-t border-slate-100 no-scrollbar">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => scrollToSection(tab.id, tab.ref)}
+                                    className={`flex-1 py-3 px-2 text-sm font-medium flex flex-col items-center gap-1 min-w-[80px] transition-all whitespace-nowrap ${
+                                        activeTab === tab.id 
+                                            ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50/50' 
+                                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    <Icon name={tab.icon} className="w-4 h-4" />
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="max-w-2xl mx-auto p-4 space-y-8 mt-2">
+                        <div className="px-2 pt-2 pb-0">
+                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-2 flex items-center gap-2">
+                                <Icon name="CreditCard" className="w-6 h-6 text-blue-600" />
+                                异地就医与门特
+                            </h1>
+                            <p className="text-slate-500 text-sm ml-1 border-l-2 border-slate-200 pl-3 leading-relaxed">
+                                搞懂异地备案与门诊特殊病种（门特），看病报销更省钱。
+                            </p>
+                        </div>
+
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3">
+                            <Icon name="Info" className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                            <div className="text-sm text-blue-800 leading-relaxed">
+                                本指南梳理了<strong>支付宝备案</strong>、<strong>门特申请</strong>及两者之间的<strong>报销逻辑</strong>。点击步骤可标记进度。
+                            </div>
+                        </div>
+
+                        {/* Phase 1 */}
+                        <div ref={p1Ref} className="scroll-mt-40">
+                            <SectionHeader title="第一步：异地就医备案" iconName="Smartphone" />
+                            <Phase1 activeStep={activeStep} onStepSelect={handleStepSelect} />
+                        </div>
+
+                        {/* Phase 2 */}
+                        <div ref={p2Ref} className="scroll-mt-40">
+                            <SectionHeader title="第二步：门特办理 (关键)" iconName="Shield" />
+                            <Phase2 activeStep={activeStep} onStepSelect={handleStepSelect} />
+                        </div>
+
+                        {/* Phase 3 */}
+                        <div ref={p3Ref} className="scroll-mt-40">
+                            <SectionHeader title="第三步：搞懂报销关系" iconName="Link" />
+                            <Phase3 activeStep={activeStep} onStepSelect={handleStepSelect} />
+                        </div>
+
+                    </main>
+                    
+                    {/* Footer */}
+                    <footer className="text-center text-slate-400 text-xs py-8 max-w-2xl mx-auto border-t border-slate-200 mt-8 px-4">
+                        <p>注：内容仅供经验参考。各地医保政策各不相同，可电话当地医保局确认 </p>
+                        <p className="mt-2 opacity-60">
+                            不知道如何操作? <button onClick={() => setShowQR(true)} className="underline hover:text-slate-600">询问小河攻略</button>
+                        </p>
+                    </footer>
+                    
+                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-10 opacity-80 hover:opacity-100">
+                        <Icon name="ArrowUp" className="w-5 h-5" />
+                    </button>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
