@@ -165,13 +165,13 @@
                             number="1" title="打开支付宝搜索" desc="直接在支付宝上方搜索栏输入“异地就医备案”。" badge="入口" />
                         
                         <Step id="p1-2" isActive={activeStep === 'p1-2'} onSelect={onStepSelect}
-                            number="2" title="选择备案类型" desc="一般选择“异地长期居住”和“异地临时外出”两种选项。" 
+                            number="2" title="选择备案类型" desc="一般有“异地长期居住”和“异地临时外出”两种选项。" 
                             note="长期居住报销比例通常更高，但需要提供居住证明或签署承诺书。" badge="关键" />
                         
                         {/* 这里不再需要手动传递 badgeColor 条件，Step 组件已统一处理 */}
                         <Step id="p1-3" isActive={activeStep === 'p1-3'} onSelect={onStepSelect}
                             number="3" title="温馨提示" desc="一般选择“临时外出”或“长期居住”。尽量不要选“转诊”备案。" 
-                            note="转诊通常需要当地医院开具严格的转诊证明，否则无法审核通过。" badge="提示" />
+                            note="转诊通常需要当地医院开具转诊证明" badge="提示" />
                         
                         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-xs text-slate-500 mt-2">
                             <span className="font-bold text-slate-700">📝 举例：</span> 苏州医保临时外出就医，一般按原规定结付比例的 80% 结算。
@@ -413,7 +413,7 @@
                                 className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-full transition-all text-xs md:text-sm font-bold shrink-0 cursor-pointer shadow-sm"
                             >
                                 <Icon name="MessageCircleDots" className="w-4 h-4" />
-                                <span>询问小河攻略</span>
+                                <span>询问就医攻略</span>
                             </button>
                         </div>
                     
@@ -479,7 +479,7 @@
                     <footer className="text-center text-slate-400 text-xs py-8 max-w-2xl mx-auto border-t border-slate-200 mt-8 px-4">
                         <p>注：内容仅供经验参考。各地医保政策各不相同，可电话当地医保局确认 </p>
                         <p className="mt-2 opacity-60">
-                            不知道如何操作? <button onClick={() => setShowQR(true)} className="underline hover:text-slate-600">询问小河攻略</button>
+                            有其他就医流程问题? <button onClick={() => setShowQR(true)} className="underline hover:text-slate-600">询问小河攻略</button>
                         </p>
                     </footer>
                     
